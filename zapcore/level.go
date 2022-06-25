@@ -157,6 +157,29 @@ func (l *Level) unmarshalText(text []byte) bool {
 	return true
 }
 
+// UnmarshalYAML unmarshals YAML to a Level.
+// Unmarshals the data as a string, and then uses UnmarshalText.
+func (l *zapcore.Level) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	var o string
+
+	if err := unmarshal(&o); err != nil {
+		return err
+	}
+
+	if err := l.UnmarshalText([]byte(o)); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// UnmarshalJSON unmarshals JSON to a Level as same way UnmarshalYAML does.
+func (l *zapcore.Level) UnmarshalJSON(data []byte) error {
+	return l.UnmarshalYAML(func(v interface{}) error {
+		return json.Unmarshal(data, v)
+	})
+}
+
 // Set sets the level for the flag.Value interface.
 func (l *Level) Set(s string) error {
 	return l.UnmarshalText([]byte(s))
