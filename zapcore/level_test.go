@@ -22,11 +22,13 @@ package zapcore
 
 import (
 	"bytes"
+	"encoding/json"
 	"flag"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"gopkg.in/yaml.v2"
 )
 
 func TestLevelString(t *testing.T) {
@@ -73,6 +75,48 @@ func TestLevelText(t *testing.T) {
 		err := unmarshaled.UnmarshalText([]byte(tt.text))
 		assert.NoError(t, err, `Unexpected error unmarshaling text %q to level.`, tt.text)
 		assert.Equal(t, tt.level, unmarshaled, `Text %q unmarshaled to an unexpected level.`, tt.text)
+	}
+}
+
+func TestLevelYAML(t *testing.T) {
+	tests := []struct {
+		yamlDoc string
+		level   Level
+	}{
+		{"level: debug", DebugLevel},
+		{"level: info", InfoLevel},
+		{"level: ''", InfoLevel}, // make the zero value useful
+		{"level: warn", WarnLevel},
+		{"level: error", ErrorLevel},
+		{"level: dpanic", DPanicLevel},
+		{"level: fatal", FatalLevel},
+	}
+	for _, tt := range tests {
+		var unmarshaled Level
+		err := yaml.Unmarshal([]byte(tt.yamlDoc), &unmarshaled)
+		assert.NoError(t, err, `Unexpected error unmarshaling yaml %q to level.`, tt.text)
+		assert.Equal(t, tt.level, unmarshaled, `Yaml %q unmarshaled to an unexpected level.`, tt.text)
+	}
+}
+
+func TestLevelJSON(t *testing.T) {
+	tests := []struct {
+		jsonDoc string
+		level   Level
+	}{
+		{`{"level": "debug"}`, DebugLevel},
+		{`{"level": "info"}`, InfoLevel},
+		{`{"level": ""}`, InfoLevel}, // make the zero value useful
+		{`{"level": "warn"}`, WarnLevel},
+		{`{"level": "error"}`, ErrorLevel},
+		{`{"level": "dpanic"}`, DPanicLevel},
+		{`{"level": "fatal"}`, FatalLevel},
+	}
+	for _, tt := range tests {
+		var unmarshaled Level
+		err := json.Unmarshal([]byte(tt.jsonDoc), &cfg)
+		assert.NoError(t, err, `Unexpected error unmarshaling json %q to level.`, tt.text)
+		assert.Equal(t, tt.level, unmarshaled, `Json %q unmarshaled to an unexpected level.`, tt.text)
 	}
 }
 
